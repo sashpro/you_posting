@@ -39,22 +39,22 @@ credential = None
 app = Flask(__name__)
 @app.route('/auth_callback')
 def auth_redir():
-    error = request.args.get('error', '')
-    global credential
-    if error:
-        credential = CRED_ERROR
-        return "Error: " + error
-
+    # error = request.args.get('error', '')
+    # global credential
+    # if error:
+    #     credential = CRED_ERROR
+    #     return "Error: " + error
+    #
     code = request.args.get('code', None)
-    if code:
-        credentials = flow.step2_exchange(code)
-
-        storage = Storage("you-oauth2.json")
-        storage.put(credentials)
-        credential = CRED_READY
-        # get_token(code)
-    #text = '<a href="%s">Authenticate with reddit</a>'
-    return '' #'#text % make_authorization_url()
+    # if code:
+    #     credentials = flow.step2_exchange(code)
+    #
+    #     storage = Storage("you-oauth2.json")
+    #     storage.put(credentials)
+    #     credential = CRED_READY
+    #     # get_token(code)
+    text = '<P>Copy code in console - </P>%s'
+    return text % code
 
 
 def find(pattern_files, path):
@@ -72,8 +72,13 @@ def find(pattern_files, path):
 
 def search_video(youtube, **kwargs):
     search_response = youtube.search().list(
-        type="video",
-        part="id,snippet",
+        {
+            "kind": "youtube#searchResult",
+            "snippet": {
+
+                "title": kwargs.get('title',''),
+            },
+        }
         ).execute()
     print "search list: %s" % search_response
 
@@ -96,7 +101,6 @@ def ins_playlist(youtube, **kwargs):
 
 
 def add_video_to_playlist(youtube, videoID, playlistID):
-    #youtube = get_authenticated_service() #write it yourself
     add_video_request=youtube.playlistItems().insert(
         part="snippet",
         body={
@@ -110,6 +114,7 @@ def add_video_to_playlist(youtube, videoID, playlistID):
             }
         }
     ).execute()
+
 
 def main():
     p = argparse.ArgumentParser(description='Symbols image generator')
@@ -134,6 +139,7 @@ def main():
             films = root.find('films')
             for film in films:
                 print(film.text)
+                search_video(youtube, title=film.text)
             add_video_to_playlist(youtube, 'hCcU3KjTdEU', playlistID)
 
 
@@ -162,8 +168,8 @@ def get_authenticated_service(args):
 
 
 if __name__ == '__main__':
-    #server = Process(target=app.run, kwargs={'debug': True, 'port': 65010})
-    #server.start()
+    server = Process(target=app.run, kwargs={'debug': True, 'port': 65010})
+    server.start()
     main()
 
 
