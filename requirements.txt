@@ -1,7 +1,12 @@
 apiclient==1.0.3
 appdirs==1.4.3
+click==6.7
+Flask==0.12.1
 google-api-python-client==1.6.2
 httplib2==0.10.3
+itsdangerous==0.24
+Jinja2==2.9.6
+MarkupSafe==1.0
 oauth2==1.9.0.post1
 oauth2client==4.0.0
 packaging==16.8
@@ -14,3 +19,4 @@ rsa==3.4.2
 six==1.10.0
 uritemplate==3.0.0
 urllib3==1.20
+Werkzeug==0.12.1

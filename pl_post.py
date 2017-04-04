@@ -15,7 +15,7 @@ import socket               # Import socket module
 import xml.etree.cElementTree as ET
 
 from flask import Flask, request
-from multiprocessing import Process
+from multiprocessing import Process, Manager
 # CLIENT_ID = "p-jcoLKBynTLew"
 # CLIENT_SECRET = "gko_LXELoV07ZBNUXrvWZfzE3aI"
 CONFIG_FILE = 'config.json'
@@ -37,24 +37,29 @@ credential = None
 
 
 app = Flask(__name__)
+#server = Process(target=app.run, kwargs={'debug': True, 'port': 65010})
+#server.start()
 @app.route('/auth_callback')
 def auth_redir():
-    # error = request.args.get('error', '')
+    error = request.args.get('error', '')
     # global credential
-    # if error:
+    if error:
+        text = '<P>Clear you-oauth2.json file , error %s</P>'% error
     #     credential = CRED_ERROR
     #     return "Error: " + error
     #
     code = request.args.get('code', None)
-    # if code:
+    if code:
+    #     global flow
+    #     print(flow)
     #     credentials = flow.step2_exchange(code)
     #
     #     storage = Storage("you-oauth2.json")
     #     storage.put(credentials)
-    #     credential = CRED_READY
+    #     #credential = CRED_READY
     #     # get_token(code)
-    text = '<P>Copy code in console - </P>%s'
-    return text % code
+        text = '<P>Copy code in console - </P>%s'% code
+    return text
 
 
 def find(pattern_files, path):
@@ -72,15 +77,25 @@ def find(pattern_files, path):
 
 def search_video(youtube, **kwargs):
     search_response = youtube.search().list(
-        {
-            "kind": "youtube#searchResult",
-            "snippet": {
+        q=kwargs.get('title'),
+        part='snippet',
+        maxResults=1,
+        type='video',
+        order='viewCount'
+        # kind="youtube#searchResult"
+            # "snippet": {
+            #
+            #     "title": kwargs.get('title'),
+            # },
 
-                "title": kwargs.get('title',''),
-            },
-        }
         ).execute()
-    print "search list: %s" % search_response
+    for video in search_response['items']:
+        print(video['snippet']['title'])
+    #print(search_response['items'][1]['id']['videoId'])
+    return search_response['items'][0]['id']['videoId']
+
+    # for video in search_response['items']:
+    #     print "search list: %s" % video['id']
 
 
 def ins_playlist(youtube, **kwargs):
@@ -123,6 +138,7 @@ def main():
     args = p.parse_args()
 
     file_list = find(args.files, args.dir)
+    print(file_list)
 
     youtube = get_authenticated_service(args)
     #youtube=True
@@ -139,26 +155,28 @@ def main():
             films = root.find('films')
             for film in films:
                 print(film.text)
-                search_video(youtube, title=film.text)
-            add_video_to_playlist(youtube, 'hCcU3KjTdEU', playlistID)
+                v_id = search_video(youtube, title=film.text)
+                add_video_to_playlist(youtube, v_id, playlistID)
+    return 0
 
 
 def get_authenticated_service(args):
 
     storage = Storage("you-oauth2.json")
-    #credentials = storage.get()
+    credentials = storage.get()
 
-    #if credentials is None or credentials.invalid:
-    global flow
-    flow = flow_from_clientsecrets(os.path.abspath(CONFIG_FILE),
-                                   scope=YOUTUBE_SCOPE,
-                                   message=MISSING_CLIENT_SECRETS_MESSAGE,
-                                   redirect_uri=REDIRECT_URI)
+    if credentials is None or credentials.invalid:
+        global flow
+        flow = flow_from_clientsecrets(os.path.abspath(CONFIG_FILE),
+                                       scope=YOUTUBE_SCOPE,
+                                       message=MISSING_CLIENT_SECRETS_MESSAGE,
+                                       redirect_uri=REDIRECT_URI)
 
-    auth_uri = flow.step1_get_authorize_url()
-    webbrowser.open_new(auth_uri)
-    code = raw_input('code  из строки:')
-    credentials = flow.step2_exchange(code)
+        auth_uri = flow.step1_get_authorize_url()
+        webbrowser.open_new(auth_uri)
+        code = raw_input('code  из строки:')
+        credentials = flow.step2_exchange(code)
+        storage.put(credentials)
 
     if credentials:
         return build(YOUTUBE_API_SERVICE_NAME, YOUTUBE_API_VERSION,
@@ -168,53 +186,8 @@ def get_authenticated_service(args):
 
 
 if __name__ == '__main__':
-    server = Process(target=app.run, kwargs={'debug': True, 'port': 65010})
-    server.start()
+    #code = Manager.Value('s', '')
+
+    print('start_server')
     main()
 
-
-
-
-# CLIENT_ID = "p-jcoLKBynTLew"
-# CLIENT_SECRET = "gko_LXELoV07ZBNUXrvWZfzE3aI"
-# REDIRECT_URI = "http://localhost:65010/reddit_callback"
-#
-# from flask import Flask
-# app = Flask(__name__)
-# @app.route('/')
-# def homepage():
-#     text = '<a href="%s">Authenticate with reddit</a>'
-#     return text % make_authorization_url()
-#
-# def make_authorization_url():
-#     # Generate a random string for the state parameter
-#     # Save it for use later to prevent xsrf attacks
-#     from uuid import uuid4
-#     state = str(uuid4())
-#     save_created_state(state)
-#     params = {"client_id": CLIENT_ID,
-#               "response_type": "code",
-#               "state": state,
-#               "redirect_uri": REDIRECT_URI,
-#               "duration": "temporary",
-#               "scope": "identity"}
-#     import urllib
-#     url = "https://ssl.reddit.com/api/v1/authorize?" + urllib.urlencode(params)
-#     return url
-#
-# # Left as an exercise to the reader.
-# # You may want to store valid states in a database or memcache,
-# # or perhaps cryptographically sign them and verify upon retrieval.
-# def save_created_state(state):
-#     pass
-# def is_valid_state(state):
-#     return True
-#
-# def main():
-#     print('main')
-#     while True:
-#         pass
-#
-# if __name__ == '__main__':
-#     app.run(debug=True, port=65010)
-#     main()
