@@ -129,7 +129,7 @@ def get_authenticated_service():
     credentials = storage.get()
 
     if credentials is None or credentials.invalid:
-        server = Process(target=app.run, kwargs={'debug': True, 'port': 65010})
+        server = Process(target=app.run, kwargs={'debug': False, 'port': 65010})
         server.start()
         flow = flow_from_clientsecrets(os.path.abspath(CONFIG_FILE),
             scope=YOUTUBE_SCOPE,
