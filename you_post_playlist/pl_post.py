@@ -28,10 +28,10 @@ app = Flask(__name__)
 def auth_redir():
     error = request.args.get('error', '')
     if error:
-        text = '<P>Clear you-oauth2.json file , error %s</P>'% error
+        text = '<P>Clear you-oauth2.json file , error %s</P>' % error
     code = request.args.get('code', None)
     if code:
-        text = '<P>Copy code in console - </P>%s'% code
+        text = '<P>Copy code in console - </P>%s' % code
     return text
 
 

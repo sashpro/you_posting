@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+<form method="get">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <input type="submit" value="Фильтр"/>
+</form>
+<br>
+<table>
+    <thead>
+    <tr>
+        <td>
+            Канал
+        </td>
+        <td>
+            Просмотры
+        </td>
+    </tr>
+    </thead>
+    <tbody>
+        {% for chan in channels%}
+    <tr>
+        <td>
+            {{ chan.name }}
+        </td>
+        <td>
+            {{ chan.new }}
+        </td>
+    </tr>
+        {% endfor %}
+    </tbody>
+</table>
+</body>
+</html>
