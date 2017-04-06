@@ -22,10 +22,9 @@ def filter_channels(request):
         new = []
         for lst in youtube_list:
             if lst.id % 2:
-                lst.view_rate = lst.new if lst.new is not None else 0
-                print(lst.new)
+                lst.view_rate = int(lst.new) if lst.new is not None else 0
                 new.append(lst)
-        serializer = YotubeSerializer(youtube_list, many=True)
+        serializer = YotubeSerializer(new, many=True)
         return Response(serializer.data)
     except (TypeError, AttributeError) as err:
         print ('error ', err.message)
@@ -44,7 +43,7 @@ def filter(params):
 
         if f_data['region']:
             where = 'WHERE country_code=\"{}\"'.format(str(f_data['region']).lower())
-        dic['geo'] = "(select F_GEO.youtube_channel_id as id, F_GEO.country_code, sum(F_GEO.viewer_percentage) as SB from \"filter_youtubegeoanalytics\" as F_GEO {} group by \"id\")".format(where)
+        dic['geo'] = "(select F_GEO.youtube_channel_id as geo_id, F_GEO.country_code, CAST(sum(F_GEO.viewer_percentage)as FLOAT) as SB from \"filter_youtubegeoanalytics\" as F_GEO {} group by geo_id)".format(where)
 
         where=''
         if f_data['age_group'] or f_data['gender']:
@@ -54,26 +53,26 @@ def filter(params):
             if f_data['gender']:
                 demogr.append('gender=\"' + f_data['gender']+'\"')
             where = 'WHERE '+' AND '.join(demogr).lower()
-        dic['demo'] = "(select F_DEMO.youtube_channel_id as id, sum(F_DEMO.viewer_percentage) as SB from \"filter_youtubedemographicsanalytics\" as F_DEMO {} group by \"id\")".format(where)
+        dic['demo'] = "(select F_DEMO.youtube_channel_id as dem_id, CAST(sum(F_DEMO.viewer_percentage)as FLOAT) as SB from \"filter_youtubedemographicsanalytics\" as F_DEMO {} group by dem_id)".format(where)
 
         where = ''
         if f_data['device']:
             where = 'WHERE device_type=\"{}\"'.format(str(f_data['device']).lower())
-        dic['dev'] ="(select F_DEV.youtube_channel_id as id, sum(F_DEV.viewer_percentage) as SB from \"filter_youtubedeviceanalytics\" as F_DEV {} group by \"id\")".format(where)
+        dic['dev'] ="(select F_DEV.youtube_channel_id as dev_id, CAST(sum(F_DEV.viewer_percentage) as FLOAT) as SB from \"filter_youtubedeviceanalytics\" as F_DEV {} group by dev_id)".format(where)
 
         where = ''
         if f_data['os']:
             where = 'WHERE os=\"{}\"'.format(unicode(f_data['os']).lower())
-        dic['os'] = "(select F_OS.youtube_channel_id as id, sum(F_OS.viewer_percentage) as SB from \"filter_youtubeosanalytics\" as F_OS {} group by \"id\")".format(where)
+        dic['os'] = "(select F_OS.youtube_channel_id as os_id, CAST(sum(F_OS.viewer_percentage) as FLOAT) as SB from \"filter_youtubeosanalytics\" as F_OS {} group by os_id)".format(where)
         # if f_data['view_rate_min'] or f_data['view_rate_max']:
         #     pass
         q = "WITH geo as "+dic['geo']+", demo as "+dic['demo']+",dev as "+dic['dev']+", os as "+dic['os']+\
-            "SELECT DISTINCT FY.id, FY.name, FY.view_rate, (geo.SB * demo.SB * os.SB * dev.SB)*FY.view_rate as \"new\" "\
+            "SELECT DISTINCT FY.id, FY.name, FY.view_rate, (geo.SB/100*demo.SB/100*dev.SB/100*os.SB/100)*FY.view_rate as \"new\" "\
             "FROM \"filter_youtube\" FY "\
-            "LEFT OUTER  JOIN  geo on FY.id = geo.id " \
-            "LEFT OUTER  JOIN demo on FY.id = demo.id "\
-            "LEFT OUTER  JOIN dev on FY.id = dev.id "\
-            "LEFT OUTER JOIN os on FY.id = os.id "\
+            "LEFT OUTER  JOIN  geo on FY.id = geo.geo_id " \
+            "LEFT OUTER  JOIN demo on FY.id = demo.dem_id "\
+            "LEFT OUTER  JOIN dev on FY.id = dev.dev_id "\
+            "LEFT OUTER JOIN os on FY.id = os.os_id "\
             "GROUP BY FY.id, FY.name, FY.view_rate ORDER BY \"new\" DESC "
         channels = Youtube.objects.raw(q)
 

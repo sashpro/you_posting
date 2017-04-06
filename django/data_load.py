@@ -75,7 +75,7 @@ def add_OSstat():
     table = YoutubeOSAnalytics.objects
     start = time.clock()
     os = ['android','windows','linux','mac','ios']
-    perc = [17, 23, 10, 20, 18, 12]
+    perc = [17, 23, 10, 20, 30]
     if table.all().count() == 0:
         for chan in Youtube.objects.all():
             shuffle(perc)
