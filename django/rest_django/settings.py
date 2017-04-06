@@ -38,6 +38,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'filter',
+    'rest_framework',
 ]
 
 MIDDLEWARE_CLASSES = [
@@ -52,6 +53,13 @@ MIDDLEWARE_CLASSES = [
 ]
 
 ROOT_URLCONF = 'rest_django.urls'
+
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework.authentication.BasicAuthentication',
+        'rest_framework.authentication.SessionAuthentication',
+    )
+}
 
 TEMPLATES = [
     {

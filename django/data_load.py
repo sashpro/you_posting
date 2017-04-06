@@ -7,7 +7,7 @@ import sys
 import time
 from django.utils import timezone as tz
 #from init_db import init_db
-from random import choice, shuffle
+from random import choice, shuffle, randint
 
 # from base.forms import OrderForm
 # from base.areas import AREAS_TUPLE
@@ -22,7 +22,7 @@ def add_channels():
         NAMES = (u'Саня', u'Сашка', u'Анна', u'Игорь', u'Вася', u'Alex', u'Victor', u'Юра', u'Гадюка', u'Чебурашка')
         amount = 10
         for i in range(amount):
-            el = Youtube.objects.create(name=choice(NAMES))
+            el = Youtube.objects.create(name=choice(NAMES), view_rate=randint(50000, 1000000))
     return time.clock() - start
 
 
@@ -31,7 +31,7 @@ def add_Geostat():
     from filter.models import Youtube
     table = YoutubeGeoAnalytics.objects
     start = time.clock()
-    regions = ['RU', 'UA', 'UK', 'USA', 'BL']
+    regions = ['ru', 'ua', 'uk', 'usa', 'bl']
     perc = [10, 25, 15, 30, 20]
     if table.all().count() == 0:
         for chan in Youtube.objects.all():
@@ -45,7 +45,7 @@ def add_Devstat():
     from filter.models import Youtube
     table = YoutubeDeviceAnalytics.objects
     start = time.clock()
-    dev = ["DESKTOP","MOBILE","TABLET"]
+    dev = ["desktop","mobile","tablet"]
     perc = [10, 35, 55]
     if table.all().count() == 0:
         for chan in Youtube.objects.all():
@@ -74,7 +74,7 @@ def add_OSstat():
     from filter.models import Youtube
     table = YoutubeOSAnalytics.objects
     start = time.clock()
-    os = ['Android','Windows','Linux','Mac','iOs']
+    os = ['android','windows','linux','mac','ios']
     perc = [17, 23, 10, 20, 18, 12]
     if table.all().count() == 0:
         for chan in Youtube.objects.all():
