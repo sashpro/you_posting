@@ -1,6 +1,7 @@
+# -*- encoding: utf-8
 from django.shortcuts import render, render_to_response
 from django.db.models import Q, Sum, F, Value
-
+from django.db.models.expressions import RawSQL
 from .forms import FilterForm
 from .models import *
 
@@ -9,46 +10,47 @@ from .models import *
 
 def index_filter(request):
     form = FilterForm(request.GET)
-    channels = None
+    channels = Youtube.objects.all()
     if form.is_valid():
         f_data = form.cleaned_data
-        channels = Youtube.objects.all()
-        q=Q()
-        # q = q*F('geo__viewer_percentage')
-        print(f_data)
+
         dic={}
+        where = ''
         if f_data['region']:
-            dic['geo__country_code'] = f_data['region']
-            channels = channels.filter(geo__country_code=f_data['region'])
-        if f_data['age_group']:
-            dic['demographics__age_group'] = f_data['age_group']
-            q = q & Q(demographics__age_group=f_data['age_group'])
+            where = 'WHERE country_code=\"{}\"'.format(f_data['region'])
+        dic['geo'] = "(select F_GEO.youtube_channel_id as id, F_GEO.country_code, sum(F_GEO.viewer_percentage) as SB from \"filter_youtubegeoanalytics\" as F_GEO {} group by \"id\")".format(where)
 
-        if f_data['gender']:
-            dic['demographics__gender'] = f_data['gender']
-            q = q & Q(demographics__gender=f_data['gender'])
-        #channels = channels.filter(q)
-        #     channels = channels.filter(demographics__gender=f_data['gender'])
+        where=''
+        if f_data['age_group'] or f_data['gender']:
+            demogr = []
+            if f_data['age_group']:
+                demogr.append('age_group=\"'+f_data['age_group']+'\"')
+            if f_data['gender']:
+                demogr.append('gender=\"' + f_data['gender']+'\"')
+            where = 'WHERE '+' AND '.join(demogr)
+        dic['demo'] = "(select F_DEMO.youtube_channel_id as id, sum(F_DEMO.viewer_percentage) as SB from \"filter_youtubedemographicsanalytics\" as F_DEMO {} group by \"id\")".format(where)
+
+        where = ''
         if f_data['device']:
-            dic['device_views__device_type']=f_data['device']
-            channels = channels.filter(device_views__device_type=f_data['device'])
+            where = 'WHERE device_type=\"{}\"'.format(f_data['device'])
+        dic['dev'] ="(select F_DEV.youtube_channel_id as id, sum(F_DEV.viewer_percentage) as SB from \"filter_youtubedeviceanalytics\" as F_DEV {} group by \"id\")".format(where)
+
+        where = ''
         if f_data['os']:
-            dic['os_views__os']=f_data['os']
-            channels = channels.filter(os_views__os=f_data['os'])
-        channels =channels.filter(Q(**dic))
+            where = 'WHERE os=\"{}\"'.format(f_data['os'])
+        dic['os'] = "(select F_OS.youtube_channel_id as id, sum(F_OS.viewer_percentage) as SB from \"filter_youtubeosanalytics\" as F_OS {} group by \"id\")".format(where)
 
-        channels = channels.annotate(new=Sum('demographics__viewer_percentage')# *
-                                         # Sum(F('device_views__viewer_percentage')/100.0)*
-                                         # Sum(F('os_views__viewer_percentage')/100.0)
+        q = "WITH geo as "+dic['geo']+", demo as "+dic['demo']+",dev as "+dic['dev']+", os as "+dic['os']+\
+            "SELECT DISTINCT FY.id, FY.name, FY.view_rate, (geo.SB * demo.SB * os.SB * dev.SB) as \"new\" "\
+            "FROM \"filter_youtube\" FY "\
+            "INNER JOIN  geo on FY.id = geo.id " \
+            "INNER JOIN demo on FY.id = demo.id "\
+            "INNER JOIN dev on FY.id = dev.id "\
+            "INNER JOIN os on FY.id = os.id "\
+            "GROUP BY FY.id, FY.name, FY.view_rate ORDER BY \"new\" DESC "
 
-                                     ).distinct().order_by('-new')#.update(view_rate=F('new'))
-        print(channels.query)
-        #channels. 'SELECT DISTINCT "filter_youtube"."id", "filter_youtube"."name", "filter_youtube"."title", "filter_youtube"."view_rate",
-        # (CAST(SUM("filter_youtubedemographicsanalytics"."viewer_percentage") AS NUMERIC) + CAST(SUM("filter_youtubegeoanalytics"."viewer_percentage") AS NUMERIC)) AS "new"
-        # FROM "filter_youtube" LEFT OUTER JOIN "filter_youtubedemographicsanalytics" ON ("filter_youtube"."id" = "filter_youtubedemographicsanalytics"."youtube_channel_id")
-        # LEFT OUTER JOIN "filter_youtubegeoanalytics" ON ("filter_youtube"."id" = "filter_youtubegeoanalytics"."youtube_channel_id") GROUP BY "filter_youtube"."id", "filter_youtube"."name", "filter_youtube"."title", "filter_youtube"."view_rate" ORDER BY "new" DESC'
-        # for chan in channels:
-        #     print (chan.name, chan.new)
+        print (channels.query)
+
     return render_to_response('filter/filter.html', {
         'form': form,
         'channels': channels
@@ -60,4 +62,19 @@ def index_filter(request):
 # WHERE p.update = 1
 
 
-#SELECT "filter_youtube"."id", "filter_youtube"."name", "filter_youtube"."title", "filter_youtube"."view_rate", ("filter_youtubegeoanalytics"."viewer_percentage" * "filter_youtubedemographicsanalytics"."viewer_percentage") AS "new" FROM "filter_youtube" LEFT OUTER JOIN "filter_youtubegeoanalytics" ON ("filter_youtube"."id" = "filter_youtubegeoanalytics"."youtube_channel_id") LEFT OUTER JOIN "filter_youtubedemographicsanalytics" ON ("filter_youtube"."id" = "filter_youtubedemographicsanalytics"."youtube_channel_id")
+# WITH geo as (select F_GEO.youtube_channel_id as id, F_GEO.country_code, sum(F_GEO.viewer_percentage) as SB from "filter_youtubegeoanalytics" as F_GEO
+# where country_code = 'UA' group by id),
+# demo as (select F_DEMO.youtube_channel_id as id, sum(F_DEMO.viewer_percentage) as SB from "filter_youtubedemographicsanalytics" as F_DEMO WHERE gender = 'male' AND age_group = '13-17' group by id),
+# dev as (select F_DEV.youtube_channel_id as id, sum(F_DEV.viewer_percentage) as SB from "filter_youtubedeviceanalytics" as F_DEV
+# WHERE device_type = 'DESKTOP' group by id),
+# os as (select F_OS.youtube_channel_id as id, sum(F_OS.viewer_percentage) as SB from
+# "filter_youtubeosanalytics" as F_OS WHERE os = 'Linux' group by id)
+# -- UPDATE "filter_youtube" \
+# -- SET FY.view_rate = (geo.SB * demo.SB * os.SB * dev.SB)
+# SELECT DISTINCT FY.id, FY.name, FY.view_rate, (geo.SB * demo.SB * os.SB * dev.SB) as 'new'
+# FROM  "filter_youtube" FY
+# INNER JOIN geo on FY.id = geo.id
+# INNER JOIN demo on FY.id = demo.id
+# INNER JOIN dev on FY.id = dev.id
+# INNER JOIN os on FY.id = os.id
+# GROUP BY FY.id, FY.name, FY.view_rate ORDER BY "new" DESC
