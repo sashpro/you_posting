@@ -40,6 +40,48 @@ def add_Geostat():
                 table.create(youtube_channel=chan, country_code=reg, viewer_percentage=perc[i])
     return time.clock() - start
 
+def add_Devstat():
+    from filter.models import YoutubeDeviceAnalytics
+    from filter.models import Youtube
+    table = YoutubeDeviceAnalytics.objects
+    start = time.clock()
+    dev = ["DESKTOP","MOBILE","TABLET"]
+    perc = [10, 35, 55]
+    if table.all().count() == 0:
+        for chan in Youtube.objects.all():
+            shuffle(perc)
+            for i, reg in zip(range(0,5), dev):
+                table.create(youtube_channel=chan, device_type=reg, viewer_percentage=perc[i])
+    return time.clock() - start
+
+def add_Genderstat():
+    from filter.models import YoutubeDemographicsAnalytics
+    from filter.models import Youtube
+    table = YoutubeDemographicsAnalytics.objects
+    start = time.clock()
+    age = ['13-17','18-24','25-34', '34-44','45-54','55-64','65+']
+    sex = ['male', 'female']
+    perc = [5, 15, 10, 25, 20, 18, 7]
+    if table.all().count() == 0:
+        for chan in Youtube.objects.all():
+            shuffle(perc)
+            for i, reg in zip(range(0,10), age):
+                table.create(youtube_channel=chan, age_group=reg, gender=choice(sex), viewer_percentage=perc[i])
+    return time.clock() - start
+
+def add_OSstat():
+    from filter.models import YoutubeOSAnalytics
+    from filter.models import Youtube
+    table = YoutubeOSAnalytics.objects
+    start = time.clock()
+    os = ['Android','Windows','Linux','Mac','iOs']
+    perc = [17, 23, 10, 20, 18, 12]
+    if table.all().count() == 0:
+        for chan in Youtube.objects.all():
+            shuffle(perc)
+            for i, reg in zip(range(0,10), os):
+                table.create(youtube_channel=chan, os=reg,  viewer_percentage=perc[i])
+    return time.clock() - start
 
 
 
@@ -48,13 +90,9 @@ def main():
 
     print 'Create channels. Time for that ', add_channels()
     print 'Create Geostat. Time for that ', add_Geostat()
-    # print 'Create stats ', add_stats()
-    # # print 'Create Messages. Time for that ', add_messages(argv[1])
-    # print 'Create Deals. Time for that', add_deals()
-    # print 'Add report to deals. Time for that', add_deal_stats()
-    # print 'Add monitoring to platforms. Time for that', add_monitoring()
-    # print 'Add deals to platforms. Time for that', add_deals_executed()
-    # print 'Add transaction in wallet. Time for that', add_wallets()
+    print 'Create stats DevStat', add_Devstat()
+    print 'Create Gender. Time for that ', add_Genderstat()
+    print 'Create OS. Time for that', add_OSstat()
     return
 
 

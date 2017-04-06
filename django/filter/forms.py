@@ -3,32 +3,33 @@ from django import forms
 class FilterForm(forms.Form):
     age = (
         (None,'----'),
-        (0, '13-17'),
-        (1, '18-24'),
-        (2, '25-34'),
-        (3, '34-44'),
-        (4, '45-54'),
-        (5, '55-64'),
-        (6, '65+'),
+        ('13-17', '13-17'),
+        ('18-24', '18-24'),
+        ('25-34', '25-34'),
+        ('34-44', '34-44'),
+        ('45-54', '45-54'),
+        ('55-64', '55-64'),
+        ('65+', '65+'),
     )
 
     gen = (
         (None, '----'),
-        (0,'male'),
-        (1,'female'),
+        ('male','male'),
+        ('female','female'),
     )
     dev = (
         (None, '----'),
-        (0,'desktop'),
-        (1,'mobile'),
+        ("DESKTOP","DESKTOP"),
+        ("MOBILE","MOBILE"),
+        ("TABLET","TABLET"),
     )
     ch_os = (
         (None, '----'),
-        (0,'Android'),
-        (1,'Windows'),
-        (2,'Linux'),
-        (3,'Mac'),
-        (4,'iOs'),
+        ('Android','Android'),
+        ('Windows','Windows'),
+        ('Linux','Linux'),
+        ('Mac','Mac'),
+        ('iOs','iOs'),
     )
 
     region = forms.CharField(max_length=5, required=False, label=u'Регион')
