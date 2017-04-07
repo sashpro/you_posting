@@ -32,12 +32,11 @@ class FilterForm(forms.Form):
         ('ios','iOs'),
     )
 
-
-    region = forms.CharField(max_length=5, required=False, label=u'Регион')
-    age_group = forms.ChoiceField(choices=age, required=False, label=u'Возр группы', )
-    gender = forms.ChoiceField(choices=gen, required=False, label=u'Пол')
-    device = forms.ChoiceField(choices=dev, required=False, label=u'Устройства')
-    os = forms.ChoiceField(choices=ch_os, required=False, label=u'ОС')
-    view_rate_min = forms.IntegerField(required=False)
-    view_rate_max = forms.IntegerField(required=False)
+    Country_code = forms.CharField(max_length=5, required=False, label=u'Регион')
+    Age_group = forms.ChoiceField(choices=age, required=False, label=u'Возр группы', )
+    Gender = forms.ChoiceField(choices=gen, required=False, label=u'Пол')
+    Device_type = forms.ChoiceField(choices=dev, required=False, label=u'Устройства')
+    Os = forms.ChoiceField(choices=ch_os, required=False, label=u'ОС')
+    View_from = forms.IntegerField(required=False)
+    View_to = forms.IntegerField(required=False)
 
